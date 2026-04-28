@@ -30,10 +30,14 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run tests (optional)
-        working-directory: backend
+      - name: Create startup script
         run: |
-          python -m pytest test_api.py || true
+          mkdir -p backend
+          cat > backend/startup.sh << 'EOF'
+          #!/bin/bash
+          gunicorn --bind=0.0.0.0 --timeout 600 app:app
+          EOF
+          chmod +x backend/startup.sh
 
       - name: Deploy to Azure App Service
         uses: azure/webapps-deploy@v2
