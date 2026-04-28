@@ -427,6 +427,5 @@ def delete_all_resumes():
 
 
 if __name__ == '__main__':
-    db.create_tables()
     port = int(os.environ.get('PORT', 5000))  # ← Azure injects PORT
     app.run(host='0.0.0.0', port=port, debug=False)  # debug=False in prod

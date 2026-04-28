@@ -31,6 +31,9 @@ class Database:
             self.use_sqlite = True
             self._connect_sqlite()
 
+        # Create tables after connection
+        self.create_tables()
+
     def _connect_azure(self, server, user, password, database):
         try:
             self.conn = pymssql.connect(
