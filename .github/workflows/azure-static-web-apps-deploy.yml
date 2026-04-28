@@ -12,29 +12,32 @@ jobs:
     runs-on: ubuntu-latest
     name: Build and Deploy
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: true
+          fetch-depth: 0
 
-      - name: Build App
-        working-directory: ./frontend
-        run: |
-          npm install --legacy-peer-deps
-          npm run build
-
-      - name: Upload artifact for deployment
-        uses: actions/upload-artifact@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          name: app
-          path: ./frontend/out
+          node-version: '18'
+
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: npm install --legacy-peer-deps
+
+      - name: Build application
+        working-directory: ./frontend
+        run: npm run build
 
       - name: Deploy to Azure Static Web Apps
+        id: deploy
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_TOKEN }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
-          app_location: "./frontend/out"
+          app_location: "frontend/out"
           api_location: ""
-          output_location: "."
+          output_location: ""
           skip_app_build: true
