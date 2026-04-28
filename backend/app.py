@@ -22,7 +22,7 @@ app = Flask(__name__)
 CORS(app, resources={
     r"/api/*": {
         "origins": [
-            "https://yellow-hill-06120a607.azurestaticapps.net",
+            "https://yellow-hill-06120a60f7.azurestaticapps.net",
             "http://localhost:3000",
             "http://localhost:5000",
             "*"
@@ -427,8 +427,6 @@ def delete_all_resumes():
 
 
 if __name__ == '__main__':
-    # Create database tables
     db.create_tables()
-    
-    # Run Flask app
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    port = int(os.environ.get('PORT', 5000))  # ← Azure injects PORT
+    app.run(host='0.0.0.0', port=port, debug=False)  # debug=False in prod
