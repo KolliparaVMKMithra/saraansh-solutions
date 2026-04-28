@@ -18,7 +18,19 @@ from auth_manager import auth_manager, token_required
 
 # Initialize Flask app
 app = Flask(__name__)
-CORS(app)
+# Enable CORS for frontend applications
+CORS(app, resources={
+    r"/api/*": {
+        "origins": [
+            "https://yellow-hill-06120a607.azurestaticapps.net",
+            "http://localhost:3000",
+            "http://localhost:5000",
+            "*"
+        ],
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization"]
+    }
+})
 
 # Initialize database connection
 db = Database()
