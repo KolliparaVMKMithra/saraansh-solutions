@@ -1,0 +1,27 @@
+DATABASE CONFIGURATION:
+Server: applicants-db-server.database.windows.net
+Database: applicants_db
+Username: azuredbadmin
+Password: [Configured in Azure Portal]
+
+STORAGE CONFIGURATION:
+Account: sarransh
+Container: resumes
+Key: [Configured in Azure Portal]
+
+✅ All credentials are securely stored in Azure App Service settings.
+
+
+BACKEND SERVICE: applicants-api-service
+BACKEND URL: https://applicants-api-service.azurewebsites.net
+
+
+FRONTEND APP: applicants-web-app
+FRONTEND URL: https://applicants-web-app.azurestaticapps.net
+
+9fDYr=pBaP8fPmv-JWT
+
+4.4 not done 
+4.1 error
+4.5 error
+5.2 error
