@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '@/context/AuthContext';
+import { getApiUrl } from '@/lib/api-config';
 import Layout from '@/components/Layout';
 import Link from 'next/link';
 
@@ -22,7 +23,7 @@ export default function Home() {
     const fetchCandidateCount = async () => {
       if (isAuthenticated && token) {
         try {
-          const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api';
+          const apiUrl = getApiUrl();
           const response = await fetch(`${apiUrl}/applicants?skip=0&limit=1`, {
             headers: {
               'Authorization': `Bearer ${token}`

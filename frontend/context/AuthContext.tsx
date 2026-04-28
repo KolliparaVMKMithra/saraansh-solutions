@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { getApiUrl } from '@/lib/api-config';
 
 interface AuthContextType {
   user: { email: string; fullName: string } | null;
@@ -29,7 +30,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const verifyToken = async (authToken: string) => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api';
+      const apiUrl = getApiUrl();
       const response = await fetch(`${apiUrl}/auth/verify`, {
         headers: {
           'Authorization': `Bearer ${authToken}`
@@ -57,7 +58,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const signup = async (email: string, password: string, fullName: string) => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api';
+      const apiUrl = getApiUrl();
       const response = await fetch(`${apiUrl}/auth/signup`, {
         method: 'POST',
         headers: {
@@ -69,13 +70,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const data = await response.json();
       return data;
     } catch (error) {
+      console.error('Signup error:', error);
       return { success: false, message: 'Network error' };
     }
   };
 
   const login = async (email: string, password: string) => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api';
+      const apiUrl = getApiUrl();
       const response = await fetch(`${apiUrl}/auth/login`, {
         method: 'POST',
         headers: {
@@ -94,6 +96,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       return data;
     } catch (error) {
+      console.error('Login error:', error);
       return { success: false, message: 'Network error' };
     }
   };

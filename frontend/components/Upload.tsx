@@ -2,6 +2,7 @@ import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import axios from 'axios';
 import { useAuth } from '@/context/AuthContext';
+import { getApiUrl } from '@/lib/api-config';
 
 interface UploadResponse {
   success: boolean;
@@ -30,7 +31,7 @@ export default function UploadComponent() {
     });
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api';
+      const apiUrl = getApiUrl();
       const response = await axios.post<UploadResponse>(
         `${apiUrl}/upload`,
         formData,

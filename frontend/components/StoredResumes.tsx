@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useAuth } from '@/context/AuthContext';
+import { getApiUrl } from '@/lib/api-config';
 
 interface Applicant {
   applicationId: string;
@@ -35,7 +36,7 @@ export default function StoredResumes() {
   useEffect(() => {
     const fetchApplicants = async () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api';
+        const apiUrl = getApiUrl();
         const response = await axios.get(`${apiUrl}/applicants?limit=100`, {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -55,14 +56,14 @@ export default function StoredResumes() {
   }, [token]);
 
   const handleDownloadResume = (applicantId: string) => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api';
+    const apiUrl = getApiUrl();
     const downloadUrl = `${apiUrl}/applicants/${applicantId}/download?token=${token}`;
     window.open(downloadUrl, '_blank');
   };
 
   const handleSelectApplicant = async (applicantId: string) => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api';
+      const apiUrl = getApiUrl();
       const response = await axios.get(`${apiUrl}/applicants/${applicantId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -80,7 +81,7 @@ export default function StoredResumes() {
     }
     
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api';
+      const apiUrl = getApiUrl();
       const response = await axios.delete(`${apiUrl}/applicants/${applicantId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
