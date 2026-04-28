@@ -27,7 +27,7 @@ jobs:
         working-directory: frontend
         run: npm run build
         env:
-          NEXT_PUBLIC_API_BASE_URL: https://applicants-api-service.azurewebsites.net/api
+          NEXT_PUBLIC_API_BASE_URL: https://applicants-api-service-djekhgdgfbd8dee4.centralus-01.azurewebsites.net/api
 
       - name: Deploy to Azure Static Web Apps
         id: deploy

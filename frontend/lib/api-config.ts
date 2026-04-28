@@ -1,17 +1,7 @@
-/**
- * API Configuration
- * Dynamically determines the API URL based on the environment
- */
-
 export const getApiUrl = (): string => {
-  // Only run in browser
+  // Server-side rendering
   if (typeof window === 'undefined') {
-    return process.env.NEXT_PUBLIC_API_BASE_URL || 'https://applicants-api-service.azurewebsites.net/api';
-  }
-
-  // Production Azure deployment
-  if (window.location.hostname === 'yellow-hill-06120a60f7.azurestaticapps.net') {
-    return 'https://applicants-api-service.azurewebsites.net/api';
+    return 'https://applicants-api-service-djekhgdgfbd8dee4.centralus-01.azurewebsites.net/api';
   }
 
   // Local development
@@ -19,6 +9,6 @@ export const getApiUrl = (): string => {
     return 'http://localhost:5000/api';
   }
 
-  // Fallback to environment variable or default to Azure backend
-  return process.env.NEXT_PUBLIC_API_BASE_URL || 'https://applicants-api-service.azurewebsites.net/api';
+  // Production (Azure Static Web Apps or any other deployed domain)
+  return 'https://applicants-api-service-djekhgdgfbd8dee4.centralus-01.azurewebsites.net/api';
 };
