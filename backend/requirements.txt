@@ -1,0 +1,31 @@
+# Web Framework
+Flask==2.3.2
+Flask-CORS==4.0.0
+gunicorn==21.2.0
+waitress==2.1.2
+
+# Document Parsing
+python-docx==0.8.11
+pdfplumber==0.10.2
+PyPDF2==3.0.1
+
+# Database
+pyodbc==4.0.39  # For Azure SQL Database
+# sqlite3 is built-in with Python
+
+# Azure Services
+azure-storage-blob==12.17.0
+azure-identity==1.13.0
+azure-data-tables==12.4.0
+
+# Authentication
+PyJWT==2.8.0
+bcrypt==4.0.1
+
+# Environment Configuration
+python-dotenv==1.0.0
+
+# Development
+pytest==7.3.2
+black==23.7.0
+flake8==6.0.0
