@@ -20,11 +20,11 @@ jobs:
           node-version: '18'
 
       - name: Install frontend dependencies
-        working-directory: ./applicant-database-app/frontend
+        working-directory: applicant-database-app/frontend
         run: npm ci --legacy-peer-deps
 
       - name: Build frontend
-        working-directory: ./applicant-database-app/frontend
+        working-directory: applicant-database-app/frontend
         run: npm run build
 
       - name: Deploy to Azure Static Web Apps
