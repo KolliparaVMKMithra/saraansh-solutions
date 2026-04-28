@@ -160,9 +160,9 @@ class Database:
         INSERT INTO Applicants (
             applicationId, applicantName, emailAddress, mobileNumber,
             city, state, applicantStatus, jobTitle, ownership,
-            workAuthorization, source, createdBy, createdOn,
+            workAuthorization, source, createdBy,
             techSkills, resumeText, blobUrl
-        ) VALUES ({p},{p},{p},{p},{p},{p},{p},{p},{p},{p},{p},{p},{p},{p},{p},{p})
+        ) VALUES ({p},{p},{p},{p},{p},{p},{p},{p},{p},{p},{p},{p},{p},{p},{p})
         """
 
         values = (
@@ -178,7 +178,6 @@ class Database:
             data.get('workAuthorization', ''),
             data.get('source', 'Resume Upload'),
             data.get('createdBy', 'System'),
-            datetime.now().isoformat(),
             data.get('techSkills', 'Not Specified'),
             data.get('resumeText', ''),
             data.get('blobUrl', '')
