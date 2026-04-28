@@ -22,7 +22,8 @@ export default function Home() {
     const fetchCandidateCount = async () => {
       if (isAuthenticated && token) {
         try {
-          const response = await fetch('http://localhost:5000/api/applicants?skip=0&limit=1', {
+          const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api';
+          const response = await fetch(`${apiUrl}/applicants?skip=0&limit=1`, {
             headers: {
               'Authorization': `Bearer ${token}`
             }

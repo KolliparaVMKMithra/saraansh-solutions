@@ -30,8 +30,9 @@ export default function UploadComponent() {
     });
 
     try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api';
       const response = await axios.post<UploadResponse>(
-        'http://localhost:5000/api/upload',
+        `${apiUrl}/upload`,
         formData,
         {
           headers: {

@@ -35,7 +35,8 @@ export default function StoredResumes() {
   useEffect(() => {
     const fetchApplicants = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/applicants?limit=100', {
+        const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api';
+        const response = await axios.get(`${apiUrl}/applicants?limit=100`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -54,13 +55,15 @@ export default function StoredResumes() {
   }, [token]);
 
   const handleDownloadResume = (applicantId: string) => {
-    const downloadUrl = `http://localhost:5000/api/applicants/${applicantId}/download?token=${token}`;
+    const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api';
+    const downloadUrl = `${apiUrl}/applicants/${applicantId}/download?token=${token}`;
     window.open(downloadUrl, '_blank');
   };
 
   const handleSelectApplicant = async (applicantId: string) => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/applicants/${applicantId}`, {
+      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api';
+      const response = await axios.get(`${apiUrl}/applicants/${applicantId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -77,7 +80,8 @@ export default function StoredResumes() {
     }
     
     try {
-      const response = await axios.delete(`http://localhost:5000/api/applicants/${applicantId}`, {
+      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api';
+      const response = await axios.delete(`${apiUrl}/applicants/${applicantId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
