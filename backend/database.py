@@ -39,7 +39,7 @@ class Database:
                 password=password,
                 database=database,
                 login_timeout=30,
-                conn_properties='SET QUOTED_IDENTIFIER ON;'
+                tds_version='7.4'
             )
             self.use_sqlite = False
             print("[DB] Connected to Azure SQL successfully", flush=True)
