@@ -1,0 +1,49 @@
+{
+  "routes": [
+    {
+      "route": "/",
+      "serve": "/index.html",
+      "statusCode": 200
+    },
+    {
+      "route": "/login",
+      "serve": "/login/index.html",
+      "statusCode": 200
+    },
+    {
+      "route": "/signup",
+      "serve": "/signup/index.html",
+      "statusCode": 200
+    },
+    {
+      "route": "/upload",
+      "serve": "/upload/index.html",
+      "statusCode": 200
+    },
+    {
+      "route": "/search",
+      "serve": "/search/index.html",
+      "statusCode": 200
+    },
+    {
+      "route": "/resumes",
+      "serve": "/resumes/index.html",
+      "statusCode": 200
+    },
+    {
+      "route": "/*",
+      "serve": "/index.html",
+      "statusCode": 200
+    }
+  ],
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": [
+      "/images/*",
+      "/css/*",
+      "/js/*",
+      "/*.json",
+      "/*.txt"
+    ]
+  }
+}
