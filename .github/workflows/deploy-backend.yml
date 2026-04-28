@@ -32,12 +32,11 @@ jobs:
       - name: Deploy to Azure App Service
         uses: azure/webapps-deploy@v2
         with:
-          app-name: applicants-api-service
+          app-name: applicants-api-service      # ← Azure uses the short name, this is correct
           publish-profile: ${{ secrets.AZURE_APP_SERVICE_PUBLISH_PROFILE }}
           package: ./backend
 
       - name: Post deployment
         run: |
-          echo "✅ Backend deployed successfully!"
-          echo "📍 URL: https://applicants-api-service.azurewebsites.net"
-          echo "🔗 API: https://applicants-api-service.azurewebsites.net/api"
+          echo "✅ Backend deployed!"
+          echo "🔗 URL: https://applicants-api-service-djekhgdgfbd8dee4.centralus-01.azurewebsites.net/api"
