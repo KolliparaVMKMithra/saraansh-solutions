@@ -2,14 +2,9 @@
 Database Module
 Handles all database operations for applicant data
 """
-"""
-Database Module
-Handles all database operations for applicant data
-"""
 import os
 from typing import Dict, List, Any, Optional
 from datetime import datetime
-import re
 import sqlite3
 
 try:
@@ -32,7 +27,7 @@ class Database:
         if PYMSSQL_AVAILABLE and db_server and db_password:
             self._connect_azure(db_server, db_user, db_password, db_name)
         else:
-            print("[DB] Missing Azure SQL config, using SQLite")
+            print("[DB] Missing Azure SQL config, using SQLite", flush=True)
             self.use_sqlite = True
             self._connect_sqlite()
 
@@ -67,20 +62,8 @@ class Database:
             self.conn = sqlite3.connect(':memory:', check_same_thread=False)
             self.conn.row_factory = sqlite3.Row
 
-    def _connect_azure(self):
-        """Connect to Azure SQL Database"""
-        try:
-            self.conn = pyodbc.connect(self.connection_string)
-        except Exception as e:
-            print(f"Warning: Could not connect to Azure SQL: {e}")
-            print("Falling back to SQLite...")
-            self.use_sqlite = True
-            self._connect_sqlite()
-
     def _ensure_column(self, cursor, table_name: str, column_definition: str):
-        """Ensure a specific column exists in the table"""
         if self.use_sqlite:
-            # SQLite has limited ALTER TABLE support, so only add if missing
             cursor.execute(f"PRAGMA table_info({table_name})")
             columns = [row['name'] for row in cursor.fetchall()]
             col_name = column_definition.split()[0]
@@ -93,67 +76,91 @@ class Database:
                 pass
 
     def create_tables(self):
-        """Create database schema"""
         if not self.conn:
             return
 
         cursor = self.conn.cursor()
 
-        # Create Applicants table based on provided column names
-        create_table_sql = """
-        CREATE TABLE IF NOT EXISTS Applicants (
-            applicationId TEXT PRIMARY KEY,
-            applicantName TEXT NOT NULL,
-            emailAddress TEXT,
-            mobileNumber TEXT,
-            city TEXT,
-            state TEXT,
-            applicantStatus TEXT DEFAULT 'Active',
-            jobTitle TEXT,
-            ownership TEXT,
-            workAuthorization TEXT,
-            source TEXT,
-            createdBy TEXT,
-            createdOn TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            modifiedOn TIMESTAMP,
-            techSkills TEXT,
-            resumeText TEXT,
-            blobUrl TEXT
-        )
-        """
+        if self.use_sqlite:
+            create_table_sql = """
+            CREATE TABLE IF NOT EXISTS Applicants (
+                applicationId TEXT PRIMARY KEY,
+                applicantName TEXT NOT NULL,
+                emailAddress TEXT,
+                mobileNumber TEXT,
+                city TEXT,
+                state TEXT,
+                applicantStatus TEXT DEFAULT 'Active',
+                jobTitle TEXT,
+                ownership TEXT,
+                workAuthorization TEXT,
+                source TEXT,
+                createdBy TEXT,
+                createdOn TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                modifiedOn TIMESTAMP,
+                techSkills TEXT,
+                resumeText TEXT,
+                blobUrl TEXT
+            )
+            """
+            try:
+                cursor.execute(create_table_sql)
+                self.conn.commit()
+                self._ensure_column(cursor, 'Applicants', 'techSkills TEXT')
+                self._ensure_column(cursor, 'Applicants', 'resumeText TEXT')
+                self._ensure_column(cursor, 'Applicants', 'blobUrl TEXT')
+                self.conn.commit()
+            except Exception as e:
+                print(f"Warning: Could not create tables: {e}", flush=True)
+        else:
+            create_table_sql = """
+            IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Applicants' AND xtype='U')
+            CREATE TABLE Applicants (
+                applicationId NVARCHAR(255) PRIMARY KEY,
+                applicantName NVARCHAR(255) NOT NULL,
+                emailAddress NVARCHAR(255),
+                mobileNumber NVARCHAR(50),
+                city NVARCHAR(100),
+                state NVARCHAR(100),
+                applicantStatus NVARCHAR(50) DEFAULT 'Active',
+                jobTitle NVARCHAR(255),
+                ownership NVARCHAR(100),
+                workAuthorization NVARCHAR(100),
+                source NVARCHAR(100),
+                createdBy NVARCHAR(255),
+                createdOn DATETIME DEFAULT GETDATE(),
+                modifiedOn DATETIME,
+                techSkills NVARCHAR(MAX),
+                resumeText NVARCHAR(MAX),
+                blobUrl NVARCHAR(MAX)
+            )
+            """
+            try:
+                cursor.execute(create_table_sql)
+                self.conn.commit()
+            except Exception as e:
+                print(f"Warning: Could not create tables: {e}", flush=True)
 
-        try:
-            cursor.execute(create_table_sql)
-            self.conn.commit()
-            print("Database tables created successfully")
-        except Exception as e:
-            print(f"Warning: Could not create tables: {e}")
-            # Tables might already exist
-            pass
+        print("Database tables ready", flush=True)
 
-        # Ensure any new columns are present for previously created databases
-        self._ensure_column(cursor, 'Applicants', 'techSkills TEXT')
-        self._ensure_column(cursor, 'Applicants', 'resumeText TEXT')
-        self._ensure_column(cursor, 'Applicants', 'blobUrl TEXT')
-        self.conn.commit()
+    def _placeholder(self):
+        return "%s" if not self.use_sqlite else "?"
 
     def insert_applicant(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Insert new applicant record"""
         if not self.conn:
             raise Exception("Database not connected")
 
         cursor = self.conn.cursor()
-
-        # Map incoming data to database columns
         applicant_id = data.get('applicantId', '')
-        
-        insert_sql = """
+        p = self._placeholder()
+
+        insert_sql = f"""
         INSERT INTO Applicants (
             applicationId, applicantName, emailAddress, mobileNumber,
-            city, state, applicantStatus, jobTitle, ownership, 
+            city, state, applicantStatus, jobTitle, ownership,
             workAuthorization, source, createdBy, createdOn,
             techSkills, resumeText, blobUrl
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES ({p},{p},{p},{p},{p},{p},{p},{p},{p},{p},{p},{p},{p},{p},{p},{p})
         """
 
         values = (
@@ -188,185 +195,157 @@ class Database:
             raise Exception(f"Error inserting applicant: {str(e)}")
 
     def search_applicants(self, filters: Dict[str, str]) -> List[Dict[str, Any]]:
-        """
-        Search applicants based on filters
-        Returns all resumes containing ANY of the keywords in ANY field (no duplicates)
-        Filters by createdBy (current user) if provided
-        """
         if not self.conn:
             raise Exception("Database not connected")
 
         cursor = self.conn.cursor()
-        
-        # Start with base query using DISTINCT to avoid duplicates
+        p = self._placeholder()
+
         query = "SELECT DISTINCT * FROM Applicants WHERE 1=1"
         params = []
 
-        # Filter by createdBy (current user) if provided
         if filters.get('createdBy'):
             created_by = filters['createdBy'].strip()
             if created_by:
-                query += " AND createdBy = ?"
+                query += f" AND createdBy = {p}"
                 params.append(created_by)
 
-        # Keywords search - matches if ANY keyword is found in ANY field
         if filters.get('keywords'):
             keywords = filters['keywords'].strip()
             if keywords:
-                # Split by spaces to get individual keywords
                 keyword_list = keywords.split()
-                
-                # Build search condition: each keyword can match any field
                 search_conditions = []
                 for keyword in keyword_list:
                     keyword_pattern = f"%{keyword.lower()}%"
                     search_conditions.append(
-                        f"(LOWER(applicantName) LIKE ? OR LOWER(emailAddress) LIKE ? OR LOWER(jobTitle) LIKE ? OR LOWER(techSkills) LIKE ? OR LOWER(resumeText) LIKE ?)"
+                        f"(LOWER(applicantName) LIKE {p} OR LOWER(emailAddress) LIKE {p} OR LOWER(jobTitle) LIKE {p} OR LOWER(techSkills) LIKE {p} OR LOWER(resumeText) LIKE {p})"
                     )
-                    # Add the same pattern 5 times (once per field)
                     params.extend([keyword_pattern] * 5)
-                
-                # Join all keyword searches with OR (find ANY keyword)
                 if search_conditions:
                     query += " AND (" + " OR ".join(search_conditions) + ")"
 
-        # Job Title filter
         if filters.get('jobTitle'):
             jobTitle = filters['jobTitle'].strip()
             if jobTitle:
-                query += " AND LOWER(jobTitle) LIKE ?"
+                query += f" AND LOWER(jobTitle) LIKE {p}"
                 params.append(f"%{jobTitle.lower()}%")
 
-        # City filter
         if filters.get('city'):
             city = filters['city'].strip()
             if city:
-                query += " AND LOWER(city) LIKE ?"
+                query += f" AND LOWER(city) LIKE {p}"
                 params.append(f"%{city.lower()}%")
 
-        # State filter
         if filters.get('state') and filters['state'] != 'United States':
             state = filters['state'].strip()
             if state:
-                query += " AND state = ?"
+                query += f" AND state = {p}"
                 params.append(state)
 
-        query += " ORDER BY createdOn DESC LIMIT 1000"
+        if self.use_sqlite:
+            query += " ORDER BY createdOn DESC LIMIT 1000"
+        else:
+            query = query.replace("SELECT DISTINCT *", "SELECT DISTINCT TOP 1000 *")
+            query += " ORDER BY createdOn DESC"
 
         try:
             cursor.execute(query, params)
             rows = cursor.fetchall()
-            
+            columns = [desc[0] for desc in cursor.description]
             results = []
-            if self.use_sqlite:
-                for row in rows:
+            for row in rows:
+                if self.use_sqlite:
                     results.append(dict(row))
-            else:
-                # For pyodbc
-                columns = [desc[0] for desc in cursor.description]
-                for row in rows:
+                else:
                     results.append(dict(zip(columns, row)))
-            
             return results
         except Exception as e:
             raise Exception(f"Error searching applicants: {str(e)}")
 
     def get_all_applicants(self, skip: int = 0, limit: int = 100, created_by: Optional[str] = None) -> List[Dict[str, Any]]:
-        """Get all applicants with pagination (no duplicates)
-        Optionally filter by createdBy (current user)
-        """
         if not self.conn:
             raise Exception("Database not connected")
 
         cursor = self.conn.cursor()
+        p = self._placeholder()
 
-        if created_by:
-            query = f"""
-            SELECT DISTINCT * FROM Applicants
-            WHERE createdBy = ?
-            ORDER BY createdOn DESC
-            LIMIT ? OFFSET ?
-            """
-            params = (created_by, limit, skip)
+        if self.use_sqlite:
+            if created_by:
+                query = f"SELECT DISTINCT * FROM Applicants WHERE createdBy = {p} ORDER BY createdOn DESC LIMIT {p} OFFSET {p}"
+                params = (created_by, limit, skip)
+            else:
+                query = f"SELECT DISTINCT * FROM Applicants ORDER BY createdOn DESC LIMIT {p} OFFSET {p}"
+                params = (limit, skip)
         else:
-            query = f"""
-            SELECT DISTINCT * FROM Applicants
-            ORDER BY createdOn DESC
-            LIMIT ? OFFSET ?
-            """
-            params = (limit, skip)
+            if created_by:
+                query = f"SELECT DISTINCT * FROM Applicants WHERE createdBy = {p} ORDER BY createdOn DESC OFFSET {p} ROWS FETCH NEXT {p} ROWS ONLY"
+                params = (created_by, skip, limit)
+            else:
+                query = f"SELECT DISTINCT * FROM Applicants ORDER BY createdOn DESC OFFSET {p} ROWS FETCH NEXT {p} ROWS ONLY"
+                params = (skip, limit)
 
         try:
             cursor.execute(query, params)
             rows = cursor.fetchall()
-            
+            columns = [desc[0] for desc in cursor.description]
             results = []
-            if self.use_sqlite:
-                for row in rows:
+            for row in rows:
+                if self.use_sqlite:
                     results.append(dict(row))
-            else:
-                columns = [desc[0] for desc in cursor.description]
-                for row in rows:
+                else:
                     results.append(dict(zip(columns, row)))
-            
             return results
         except Exception as e:
             raise Exception(f"Error fetching applicants: {str(e)}")
 
     def get_applicant(self, applicant_id: str) -> Optional[Dict[str, Any]]:
-        """Get specific applicant by ID"""
         if not self.conn:
             raise Exception("Database not connected")
 
         cursor = self.conn.cursor()
-
-        query = "SELECT * FROM Applicants WHERE applicationId = ?"
+        p = self._placeholder()
+        query = f"SELECT * FROM Applicants WHERE applicationId = {p}"
 
         try:
             cursor.execute(query, (applicant_id,))
             row = cursor.fetchone()
-            
             if not row:
                 return None
-            
+            columns = [desc[0] for desc in cursor.description]
             if self.use_sqlite:
                 return dict(row)
-            else:
-                columns = [desc[0] for desc in cursor.description]
-                return dict(zip(columns, row))
+            return dict(zip(columns, row))
         except Exception as e:
             raise Exception(f"Error fetching applicant: {str(e)}")
 
     def update_applicant(self, applicant_id: str, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        """Update applicant record"""
         if not self.conn:
             raise Exception("Database not connected")
 
         cursor = self.conn.cursor()
+        p = self._placeholder()
 
-        # Check if applicant exists
-        check_query = "SELECT * FROM Applicants WHERE applicationId = ?"
+        check_query = f"SELECT * FROM Applicants WHERE applicationId = {p}"
         cursor.execute(check_query, (applicant_id,))
         if not cursor.fetchone():
             return None
 
-        # Build update query
         update_fields = []
         params = []
 
         for key, value in data.items():
             if key not in ['applicationId', 'createdOn', 'createdBy']:
-                update_fields.append(f"{key} = ?")
+                update_fields.append(f"{key} = {p}")
                 params.append(value)
 
         if not update_fields:
             return self.get_applicant(applicant_id)
 
-        update_fields.append("modifiedOn = ?")
+        update_fields.append(f"modifiedOn = {p}")
         params.append(datetime.now().isoformat())
         params.append(applicant_id)
 
-        update_query = f"UPDATE Applicants SET {', '.join(update_fields)} WHERE applicationId = ?"
+        update_query = f"UPDATE Applicants SET {', '.join(update_fields)} WHERE applicationId = {p}"
 
         try:
             cursor.execute(update_query, params)
@@ -377,19 +356,18 @@ class Database:
             raise Exception(f"Error updating applicant: {str(e)}")
 
     def delete_applicant(self, applicant_id: str) -> bool:
-        """Delete applicant record"""
         if not self.conn:
             raise Exception("Database not connected")
 
         cursor = self.conn.cursor()
+        p = self._placeholder()
 
-        # Check if applicant exists
-        check_query = "SELECT * FROM Applicants WHERE applicationId = ?"
+        check_query = f"SELECT * FROM Applicants WHERE applicationId = {p}"
         cursor.execute(check_query, (applicant_id,))
         if not cursor.fetchone():
             return False
 
-        delete_query = "DELETE FROM Applicants WHERE applicationId = ?"
+        delete_query = f"DELETE FROM Applicants WHERE applicationId = {p}"
 
         try:
             cursor.execute(delete_query, (applicant_id,))
@@ -400,23 +378,14 @@ class Database:
             raise Exception(f"Error deleting applicant: {str(e)}")
 
     def delete_all_applicants(self) -> int:
-        """Delete all applicant records from database
-        Returns the number of records deleted
-        """
         if not self.conn:
             raise Exception("Database not connected")
 
         cursor = self.conn.cursor()
-        
+
         try:
-            # Get count of records before deletion
             cursor.execute("SELECT COUNT(*) FROM Applicants")
-            if self.use_sqlite:
-                count = cursor.fetchone()[0]
-            else:
-                count = cursor.fetchone()[0]
-            
-            # Delete all records
+            count = cursor.fetchone()[0]
             cursor.execute("DELETE FROM Applicants")
             self.conn.commit()
             return count
@@ -425,6 +394,5 @@ class Database:
             raise Exception(f"Error deleting all applicants: {str(e)}")
 
     def close(self):
-        """Close database connection"""
         if self.conn:
             self.conn.close()
