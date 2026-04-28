@@ -2,68 +2,68 @@
 Database Module
 Handles all database operations for applicant data
 """
+"""
+Database Module
+Handles all database operations for applicant data
+"""
 import os
 from typing import Dict, List, Any, Optional
 from datetime import datetime
 import re
+import sqlite3
 
 try:
-    import pyodbc
+    import pymssql
+    PYMSSQL_AVAILABLE = True
 except ImportError:
-    pyodbc = None
-
-import sqlite3
+    PYMSSQL_AVAILABLE = False
 
 
 class Database:
-    """
-    Database handler for applicant data
-    Supports Azure SQL Database and local SQLite for testing
-    """
-    
     def __init__(self):
-        """Initialize database connection"""
-        # Try to use Azure SQL, fallback to SQLite
-        self.connection_string = os.getenv(
-            'DB_CONNECTION_STRING',
-            'sqlite:///applicants.db'
-        )
-        
-        self.use_sqlite = self.connection_string.startswith('sqlite')
         self.conn = None
-        
-        if self.use_sqlite:
-            self._connect_sqlite()
+        self.use_sqlite = False
+
+        db_server = os.getenv('DB_SERVER')
+        db_user = os.getenv('DB_USER')
+        db_password = os.getenv('DB_PASSWORD')
+        db_name = os.getenv('DB_NAME')
+
+        if PYMSSQL_AVAILABLE and db_server and db_password:
+            self._connect_azure(db_server, db_user, db_password, db_name)
         else:
-            if pyodbc:
-                self._connect_azure()
-            else:
-                self._connect_sqlite()
+            print("[DB] Missing Azure SQL config, using SQLite")
+            self.use_sqlite = True
+            self._connect_sqlite()
+
+    def _connect_azure(self, server, user, password, database):
+        try:
+            self.conn = pymssql.connect(
+                server=server,
+                user=user,
+                password=password,
+                database=database,
+                tds_version='7.0',
+                login_timeout=30
+            )
+            self.use_sqlite = False
+            print("[DB] Connected to Azure SQL successfully", flush=True)
+        except Exception as e:
+            print(f"[DB] Azure SQL connection failed: {e}", flush=True)
+            print("[DB] Falling back to SQLite", flush=True)
+            self.use_sqlite = True
+            self._connect_sqlite()
 
     def _connect_sqlite(self):
-        """Connect to SQLite database"""
-        db_path = self.connection_string.replace('sqlite:///', '')
-        
-        # If it's a relative path, make it absolute based on the backend directory
-        if not os.path.isabs(db_path):
-            backend_dir = os.path.dirname(os.path.abspath(__file__))
-            db_path = os.path.join(backend_dir, db_path)
-        
-        # Ensure the directory exists
-        db_dir = os.path.dirname(db_path)
-        if db_dir and not os.path.exists(db_dir):
-            os.makedirs(db_dir, exist_ok=True)
-        
+        backend_dir = os.path.dirname(os.path.abspath(__file__))
+        db_path = os.path.join(backend_dir, 'applicants.db')
         print(f"[DB] Connecting to SQLite: {db_path}", flush=True)
-        
         try:
             self.conn = sqlite3.connect(db_path, check_same_thread=False)
             self.conn.row_factory = sqlite3.Row
-            print(f"[DB] SQLite connected successfully", flush=True)
+            print("[DB] SQLite connected successfully", flush=True)
         except Exception as e:
-            print(f"[DB] SQLite connection error: {e}", flush=True)
-            # If even SQLite fails, try in-memory database for development
-            print(f"[DB] Falling back to in-memory database", flush=True)
+            print(f"[DB] SQLite error: {e}, using in-memory", flush=True)
             self.conn = sqlite3.connect(':memory:', check_same_thread=False)
             self.conn.row_factory = sqlite3.Row
 
