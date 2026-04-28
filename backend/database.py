@@ -12,6 +12,8 @@ try:
 except ImportError:
     pyodbc = None
 
+import sqlite3
+
 
 class Database:
     """
@@ -28,22 +30,42 @@ class Database:
         )
         
         self.use_sqlite = self.connection_string.startswith('sqlite')
+        self.conn = None
         
         if self.use_sqlite:
-            import sqlite3
-            self.sqlite3 = sqlite3
-            self.conn = None
             self._connect_sqlite()
         else:
-            self.conn = None
             if pyodbc:
                 self._connect_azure()
+            else:
+                self._connect_sqlite()
 
     def _connect_sqlite(self):
         """Connect to SQLite database"""
         db_path = self.connection_string.replace('sqlite:///', '')
-        self.conn = self.sqlite3.connect(db_path, check_same_thread=False)
-        self.conn.row_factory = self.sqlite3.Row
+        
+        # If it's a relative path, make it absolute based on the backend directory
+        if not os.path.isabs(db_path):
+            backend_dir = os.path.dirname(os.path.abspath(__file__))
+            db_path = os.path.join(backend_dir, db_path)
+        
+        # Ensure the directory exists
+        db_dir = os.path.dirname(db_path)
+        if db_dir and not os.path.exists(db_dir):
+            os.makedirs(db_dir, exist_ok=True)
+        
+        print(f"[DB] Connecting to SQLite: {db_path}", flush=True)
+        
+        try:
+            self.conn = sqlite3.connect(db_path, check_same_thread=False)
+            self.conn.row_factory = sqlite3.Row
+            print(f"[DB] SQLite connected successfully", flush=True)
+        except Exception as e:
+            print(f"[DB] SQLite connection error: {e}", flush=True)
+            # If even SQLite fails, try in-memory database for development
+            print(f"[DB] Falling back to in-memory database", flush=True)
+            self.conn = sqlite3.connect(':memory:', check_same_thread=False)
+            self.conn.row_factory = sqlite3.Row
 
     def _connect_azure(self):
         """Connect to Azure SQL Database"""
@@ -52,6 +74,7 @@ class Database:
         except Exception as e:
             print(f"Warning: Could not connect to Azure SQL: {e}")
             print("Falling back to SQLite...")
+            self.use_sqlite = True
             self._connect_sqlite()
 
     def _ensure_column(self, cursor, table_name: str, column_definition: str):
