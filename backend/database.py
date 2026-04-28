@@ -38,14 +38,13 @@ class Database:
                 user=user,
                 password=password,
                 database=database,
-                tds_version='7.0',
-                login_timeout=30
+                login_timeout=30,
+                conn_properties='SET QUOTED_IDENTIFIER ON;'
             )
             self.use_sqlite = False
             print("[DB] Connected to Azure SQL successfully", flush=True)
         except Exception as e:
             print(f"[DB] Azure SQL connection failed: {e}", flush=True)
-            print("[DB] Falling back to SQLite", flush=True)
             self.use_sqlite = True
             self._connect_sqlite()
 
