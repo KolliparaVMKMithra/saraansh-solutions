@@ -10,7 +10,7 @@ export const getApiUrl = (): string => {
   }
 
   // Production Azure deployment
-  if (window.location.hostname === 'yellow-hill-06120a607.azurestaticapps.net') {
+  if (window.location.hostname === 'yellow-hill-06120a60f7.azurestaticapps.net') {
     return 'https://applicants-api-service.azurewebsites.net/api';
   }
 
