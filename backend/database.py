@@ -18,21 +18,25 @@ class Database:
     def __init__(self):
         self.conn = None
         self.use_sqlite = False
+        self._store_config()
+        self._connect()
+        self.create_tables()
 
-        db_server = os.getenv('DB_SERVER')
-        db_user = os.getenv('DB_USER')
-        db_password = os.getenv('DB_PASSWORD')
-        db_name = os.getenv('DB_NAME')
+    def _store_config(self):
+        """Store connection config for reconnection"""
+        self.db_server = os.getenv('DB_SERVER')
+        self.db_user = os.getenv('DB_USER')
+        self.db_password = os.getenv('DB_PASSWORD')
+        self.db_name = os.getenv('DB_NAME')
 
-        if PYMSSQL_AVAILABLE and db_server and db_password:
-            self._connect_azure(db_server, db_user, db_password, db_name)
+    def _connect(self):
+        """Initial connection"""
+        if PYMSSQL_AVAILABLE and self.db_server and self.db_password:
+            self._connect_azure(self.db_server, self.db_user, self.db_password, self.db_name)
         else:
             print("[DB] Missing Azure SQL config, using SQLite", flush=True)
             self.use_sqlite = True
             self._connect_sqlite()
-
-        # Create tables after connection
-        self.create_tables()
 
     def _connect_azure(self, server, user, password, database):
         try:
@@ -64,6 +68,36 @@ class Database:
             self.conn = sqlite3.connect(':memory:', check_same_thread=False)
             self.conn.row_factory = sqlite3.Row
 
+    def _reconnect(self):
+        """Reconnect to database if connection is lost"""
+        print("[DB] Attempting reconnect...", flush=True)
+        try:
+            if self.conn:
+                try:
+                    self.conn.close()
+                except Exception:
+                    pass
+            if not self.use_sqlite:
+                self._connect_azure(self.db_server, self.db_user, self.db_password, self.db_name)
+            else:
+                self._connect_sqlite()
+            print("[DB] Reconnected successfully", flush=True)
+        except Exception as e:
+            print(f"[DB] Reconnect failed: {e}", flush=True)
+
+    def _get_cursor(self):
+        """Get cursor, reconnecting if connection is stale"""
+        try:
+            cursor = self.conn.cursor()
+            if not self.use_sqlite:
+                cursor.execute("SELECT 1")
+                cursor.fetchall()
+            return self.conn.cursor()
+        except Exception:
+            print("[DB] Connection stale, reconnecting...", flush=True)
+            self._reconnect()
+            return self.conn.cursor()
+
     def _ensure_column(self, cursor, table_name: str, column_definition: str):
         if self.use_sqlite:
             cursor.execute(f"PRAGMA table_info({table_name})")
@@ -81,7 +115,7 @@ class Database:
         if not self.conn:
             return
 
-        cursor = self.conn.cursor()
+        cursor = self._get_cursor()
 
         if self.use_sqlite:
             create_table_sql = """
@@ -152,7 +186,7 @@ class Database:
         if not self.conn:
             raise Exception("Database not connected")
 
-        cursor = self.conn.cursor()
+        cursor = self._get_cursor()
         applicant_id = data.get('applicantId', '')
         p = self._placeholder()
 
@@ -192,14 +226,17 @@ class Database:
                 'message': 'Applicant added successfully'
             }
         except Exception as e:
-            self.conn.rollback()
+            try:
+                self.conn.rollback()
+            except Exception:
+                pass
             raise Exception(f"Error inserting applicant: {str(e)}")
 
     def search_applicants(self, filters: Dict[str, str]) -> List[Dict[str, Any]]:
         if not self.conn:
             raise Exception("Database not connected")
 
-        cursor = self.conn.cursor()
+        cursor = self._get_cursor()
         p = self._placeholder()
 
         query = "SELECT DISTINCT * FROM Applicants WHERE 1=1"
@@ -267,7 +304,7 @@ class Database:
         if not self.conn:
             raise Exception("Database not connected")
 
-        cursor = self.conn.cursor()
+        cursor = self._get_cursor()
         p = self._placeholder()
 
         if self.use_sqlite:
@@ -303,7 +340,7 @@ class Database:
         if not self.conn:
             raise Exception("Database not connected")
 
-        cursor = self.conn.cursor()
+        cursor = self._get_cursor()
         p = self._placeholder()
         query = f"SELECT * FROM Applicants WHERE applicationId = {p}"
 
@@ -323,7 +360,7 @@ class Database:
         if not self.conn:
             raise Exception("Database not connected")
 
-        cursor = self.conn.cursor()
+        cursor = self._get_cursor()
         p = self._placeholder()
 
         check_query = f"SELECT * FROM Applicants WHERE applicationId = {p}"
@@ -353,14 +390,17 @@ class Database:
             self.conn.commit()
             return self.get_applicant(applicant_id)
         except Exception as e:
-            self.conn.rollback()
+            try:
+                self.conn.rollback()
+            except Exception:
+                pass
             raise Exception(f"Error updating applicant: {str(e)}")
 
     def delete_applicant(self, applicant_id: str) -> bool:
         if not self.conn:
             raise Exception("Database not connected")
 
-        cursor = self.conn.cursor()
+        cursor = self._get_cursor()
         p = self._placeholder()
 
         check_query = f"SELECT * FROM Applicants WHERE applicationId = {p}"
@@ -375,14 +415,17 @@ class Database:
             self.conn.commit()
             return True
         except Exception as e:
-            self.conn.rollback()
+            try:
+                self.conn.rollback()
+            except Exception:
+                pass
             raise Exception(f"Error deleting applicant: {str(e)}")
 
     def delete_all_applicants(self) -> int:
         if not self.conn:
             raise Exception("Database not connected")
 
-        cursor = self.conn.cursor()
+        cursor = self._get_cursor()
 
         try:
             cursor.execute("SELECT COUNT(*) FROM Applicants")
@@ -391,7 +434,10 @@ class Database:
             self.conn.commit()
             return count
         except Exception as e:
-            self.conn.rollback()
+            try:
+                self.conn.rollback()
+            except Exception:
+                pass
             raise Exception(f"Error deleting all applicants: {str(e)}")
 
     def close(self):
