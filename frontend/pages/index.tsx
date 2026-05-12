@@ -24,7 +24,7 @@ export default function Home() {
       if (isAuthenticated && token) {
         try {
           const apiUrl = getApiUrl();
-          const response = await fetch(`${apiUrl}/applicants?skip=0&limit=1`, {
+          const response = await fetch(`${apiUrl}/applicants?skip=0&limit=100000`, {
             headers: {
               'Authorization': `Bearer ${token}`
             }
