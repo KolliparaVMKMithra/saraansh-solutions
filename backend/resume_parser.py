@@ -247,6 +247,36 @@ def extract_work_authorization(text: str) -> str:
     return "Not Specified"
 
 
+def extract_visa_status(text: str) -> str:
+    """
+    Extract visa status from resume text
+    Only extracts explicitly mentioned visa statuses to avoid hallucination
+    """
+    visa_keywords = {
+        'US Citizen': ['us citizen', 'u.s. citizen', 'american citizen', 'u.s.a. citizen'],
+        'Green Card': ['green card', 'permanent resident', 'pr card', 'ead'],
+        'H-1B': ['h-1b', 'h1b', 'h 1 b'],
+        'L-1': ['l-1', 'l1', 'l 1'],
+        'O-1': ['o-1', 'o1', 'o 1'],
+        'F-1 (OPT)': ['f-1', 'f1', 'f 1', 'optional practical training', 'opt'],
+        'TN': ['tn visa', 'tn', 'nafta'],
+        'E-2': ['e-2', 'e2', 'e 2'],
+        'EB-3': ['eb-3', 'eb3', 'employment based'],
+        'B-1': ['b-1', 'b1', 'b 1'],
+        'I': ['i visa', 'i 1'],
+    }
+    
+    text_lower = text.lower()
+    
+    # Check for each visa type - priority order to avoid false positives
+    for visa_type, keywords in visa_keywords.items():
+        for keyword in keywords:
+            if keyword in text_lower:
+                return visa_type
+    
+    return "Not Specified"
+
+
 def extract_skills(text: str) -> str:
     """Extract technology skills from resume text"""
     skills_section = []
@@ -324,6 +354,7 @@ def parse_resume(filepath: str) -> Dict[str, Any]:
             'jobTitle': extract_job_title(text),
             'ownership': 'Internal',
             'workAuthorization': extract_work_authorization(text),
+            'visaStatus': extract_visa_status(text),
             'source': 'Resume Upload',
             'createdBy': 'System',
             'createdOn': datetime.now().isoformat(),

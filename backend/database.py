@@ -130,6 +130,7 @@ class Database:
                 jobTitle TEXT,
                 ownership TEXT,
                 workAuthorization TEXT,
+                visaStatus TEXT,
                 source TEXT,
                 createdBy TEXT,
                 createdOn TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -145,6 +146,7 @@ class Database:
                 self._ensure_column(cursor, 'Applicants', 'techSkills TEXT')
                 self._ensure_column(cursor, 'Applicants', 'resumeText TEXT')
                 self._ensure_column(cursor, 'Applicants', 'blobUrl TEXT')
+                self._ensure_column(cursor, 'Applicants', 'visaStatus TEXT')
                 self.conn.commit()
             except Exception as e:
                 print(f"Warning: Could not create tables: {e}", flush=True)
@@ -162,6 +164,7 @@ class Database:
                 jobTitle NVARCHAR(255),
                 ownership NVARCHAR(100),
                 workAuthorization NVARCHAR(100),
+                visaStatus NVARCHAR(100),
                 source NVARCHAR(100),
                 createdBy NVARCHAR(255),
                 createdOn DATETIME DEFAULT GETDATE(),
@@ -194,9 +197,9 @@ class Database:
         INSERT INTO Applicants (
             applicationId, applicantName, emailAddress, mobileNumber,
             city, state, applicantStatus, jobTitle, ownership,
-            workAuthorization, source, createdBy,
+            workAuthorization, visaStatus, source, createdBy,
             techSkills, resumeText, blobUrl
-        ) VALUES ({p},{p},{p},{p},{p},{p},{p},{p},{p},{p},{p},{p},{p},{p},{p})
+        ) VALUES ({p},{p},{p},{p},{p},{p},{p},{p},{p},{p},{p},{p},{p},{p},{p},{p})
         """
 
         values = (
@@ -210,6 +213,7 @@ class Database:
             data.get('jobTitle', ''),
             data.get('ownership', 'Internal'),
             data.get('workAuthorization', ''),
+            data.get('visaStatus', 'Not Specified'),
             data.get('source', 'Resume Upload'),
             data.get('createdBy', 'System'),
             data.get('techSkills', 'Not Specified'),

@@ -12,6 +12,7 @@ interface Applicant {
   state: string;
   jobTitle: string;
   workAuthorization: string;
+  visaStatus: string;
   createdOn: string;
   techSkills?: string;
 }
@@ -131,6 +132,7 @@ export default function StoredResumes() {
                 { label: 'Location', value: `${selectedApplicant.city}, ${selectedApplicant.state}`, color: 'blue' },
                 { label: 'Job Title', value: selectedApplicant.jobTitle, color: 'green' },
                 { label: 'Work Auth', value: selectedApplicant.workAuthorization, color: 'purple' },
+                { label: 'Visa Status', value: selectedApplicant.visaStatus, color: 'indigo' },
               ].map(({ label, value, color }) => (
                 <div key={label} className={`bg-${color}-50 rounded-lg p-3`}>
                   <label className="text-xs font-semibold text-gray-500 uppercase">{label}</label>
@@ -252,6 +254,7 @@ export default function StoredResumes() {
                   <th className="p-4 text-left font-semibold text-sm">Location</th>
                   <th className="p-4 text-left font-semibold text-sm">Job Title</th>
                   <th className="p-4 text-left font-semibold text-sm">Skills</th>
+                  <th className="p-4 text-left font-semibold text-sm">Visa Status</th>
                   <th className="p-4 text-center font-semibold text-sm">Actions</th>
                 </tr>
               </thead>
@@ -281,6 +284,9 @@ export default function StoredResumes() {
                           ? `${applicant.techSkills.slice(0, 40)}…`
                           : applicant.techSkills
                         : '—'}
+                    </td>
+                    <td className="p-4 text-sm font-medium text-indigo-600">
+                      {applicant.visaStatus || '—'}
                     </td>
 
                     {/* ── Cleaner Action Icons ── */}
