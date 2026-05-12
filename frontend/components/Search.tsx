@@ -13,6 +13,7 @@ interface Applicant {
   jobTitle: string;
   workAuthorization: string;
   visaStatus: string;
+  createdBy: string;
   techSkills?: string;
 }
 
@@ -124,6 +125,7 @@ export default function SearchComponent() {
                     <th className="p-4 text-left font-bold">Skills</th>
                     <th className="p-4 text-left font-bold">Work Auth</th>
                     <th className="p-4 text-left font-bold">Visa Status</th>
+                    <th className="p-4 text-left font-bold">Uploaded By</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -149,6 +151,9 @@ export default function SearchComponent() {
                       </td>
                       <td className="p-4 text-sm text-indigo-600 font-semibold">
                         {applicant.visaStatus}
+                      </td>
+                      <td className="p-4 text-sm text-orange-600 font-semibold">
+                        {applicant.createdBy}
                       </td>
                     </tr>
                   ))}

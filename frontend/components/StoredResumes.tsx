@@ -13,6 +13,7 @@ interface Applicant {
   jobTitle: string;
   workAuthorization: string;
   visaStatus: string;
+  createdBy: string;
   createdOn: string;
   techSkills?: string;
 }
@@ -144,6 +145,7 @@ export default function StoredResumes() {
             <div className="border-t pt-4 text-xs space-y-2 text-gray-500 mb-6">
               <p><span className="font-semibold">Status:</span> {selectedApplicant.applicantStatus}</p>
               <p><span className="font-semibold">Source:</span> {selectedApplicant.source}</p>
+              <p><span className="font-semibold">Uploaded By:</span> <span className="text-orange-600 font-semibold">{selectedApplicant.createdBy}</span></p>
               <p><span className="font-semibold">Added:</span> {new Date(selectedApplicant.createdOn).toLocaleDateString()}</p>
             </div>
 
@@ -255,6 +257,7 @@ export default function StoredResumes() {
                   <th className="p-4 text-left font-semibold text-sm">Job Title</th>
                   <th className="p-4 text-left font-semibold text-sm">Skills</th>
                   <th className="p-4 text-left font-semibold text-sm">Visa Status</th>
+                  <th className="p-4 text-left font-semibold text-sm">Uploaded By</th>
                   <th className="p-4 text-center font-semibold text-sm">Actions</th>
                 </tr>
               </thead>
@@ -287,6 +290,9 @@ export default function StoredResumes() {
                     </td>
                     <td className="p-4 text-sm font-medium text-indigo-600">
                       {applicant.visaStatus || '—'}
+                    </td>
+                    <td className="p-4 text-sm font-medium text-orange-600">
+                      {applicant.createdBy || '—'}
                     </td>
 
                     {/* ── Cleaner Action Icons ── */}
