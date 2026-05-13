@@ -26,7 +26,7 @@ export default function SearchComponent() {
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!keywords.trim()) {
       alert('Please enter a search keyword');
       return;
@@ -43,11 +43,9 @@ export default function SearchComponent() {
         city: '',
         state: 'United States',
       }, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        headers: { 'Authorization': `Bearer ${token}` }
       });
-      
+
       setResults(response.data.data || []);
     } catch (error) {
       console.error('Search failed:', error);
@@ -68,7 +66,6 @@ export default function SearchComponent() {
       {/* Search Form */}
       <div className="bg-blue-600 text-white p-8 rounded-lg mb-8">
         <h1 className="text-3xl font-bold mb-6">Search Applicants</h1>
-        
         <form onSubmit={handleSearch} className="space-y-4">
           <div>
             <label className="block text-sm font-semibold mb-2">
@@ -82,7 +79,6 @@ export default function SearchComponent() {
               className="w-full px-4 py-3 rounded text-gray-900 text-lg"
             />
           </div>
-
           <div className="flex gap-4">
             <button
               type="submit"
@@ -113,19 +109,20 @@ export default function SearchComponent() {
               <p className="text-gray-600">Searching database...</p>
             </div>
           ) : results.length > 0 ? (
-            <div className="bg-white rounded-lg overflow-hidden shadow">
-              <table className="w-full">
+            /* ── horizontal scroll wrapper ── */
+            <div className="w-full overflow-x-auto rounded-lg shadow border border-gray-200">
+              <table className="min-w-full bg-white">
                 <thead className="bg-gray-100 border-b-2">
                   <tr>
-                    <th className="p-4 text-left font-bold">Name</th>
-                    <th className="p-4 text-left font-bold">Email</th>
-                    <th className="p-4 text-left font-bold">Phone</th>
-                    <th className="p-4 text-left font-bold">Location</th>
-                    <th className="p-4 text-left font-bold">Job Title</th>
-                    <th className="p-4 text-left font-bold">Skills</th>
-                    <th className="p-4 text-left font-bold">Work Auth</th>
-                    <th className="p-4 text-left font-bold">Visa Status</th>
-                    <th className="p-4 text-left font-bold">Uploaded By</th>
+                    <th className="p-4 text-left font-bold whitespace-nowrap">Name</th>
+                    <th className="p-4 text-left font-bold whitespace-nowrap">Email</th>
+                    <th className="p-4 text-left font-bold whitespace-nowrap">Phone</th>
+                    <th className="p-4 text-left font-bold whitespace-nowrap">Location</th>
+                    <th className="p-4 text-left font-bold whitespace-nowrap">Job Title</th>
+                    <th className="p-4 text-left font-bold whitespace-nowrap">Skills</th>
+                    <th className="p-4 text-left font-bold whitespace-nowrap">Work Auth</th>
+                    <th className="p-4 text-left font-bold whitespace-nowrap">Visa Status</th>
+                    <th className="p-4 text-left font-bold whitespace-nowrap">Uploaded By</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -134,26 +131,24 @@ export default function SearchComponent() {
                       key={applicant.applicationId}
                       className="border-b hover:bg-blue-50 transition"
                     >
-                      <td className="p-4 font-semibold text-blue-600">
+                      <td className="p-4 font-semibold text-blue-600 whitespace-nowrap">
                         {applicant.applicantName}
                       </td>
-                      <td className="p-4 text-sm">{applicant.emailAddress}</td>
-                      <td className="p-4 text-sm">{applicant.mobileNumber}</td>
-                      <td className="p-4 text-sm">
-                        {applicant.city}, {applicant.state}
+                      <td className="p-4 text-sm whitespace-nowrap">{applicant.emailAddress}</td>
+                      <td className="p-4 text-sm whitespace-nowrap">{applicant.mobileNumber}</td>
+                      <td className="p-4 text-sm whitespace-nowrap">
+                        {[applicant.city, applicant.state].filter(Boolean).join(', ') || '—'}
                       </td>
-                      <td className="p-4 text-sm">{applicant.jobTitle}</td>
-                      <td className="p-4 text-sm">
-                        {applicant.techSkills || '—'}
+                      <td className="p-4 text-sm whitespace-nowrap">{applicant.jobTitle || '—'}</td>
+                      <td className="p-4 text-sm max-w-[180px]">{applicant.techSkills || '—'}</td>
+                      <td className="p-4 text-sm text-green-600 font-semibold whitespace-nowrap">
+                        {applicant.workAuthorization || '—'}
                       </td>
-                      <td className="p-4 text-sm text-green-600 font-semibold">
-                        {applicant.workAuthorization}
+                      <td className="p-4 text-sm text-indigo-600 font-semibold whitespace-nowrap">
+                        {applicant.visaStatus || '—'}
                       </td>
-                      <td className="p-4 text-sm text-indigo-600 font-semibold">
-                        {applicant.visaStatus}
-                      </td>
-                      <td className="p-4 text-sm text-orange-600 font-semibold">
-                        {applicant.createdBy}
+                      <td className="p-4 text-sm text-orange-600 font-semibold whitespace-nowrap">
+                        {applicant.createdBy || '—'}
                       </td>
                     </tr>
                   ))}
@@ -162,9 +157,7 @@ export default function SearchComponent() {
             </div>
           ) : (
             <div className="text-center py-12 bg-gray-50 rounded-lg">
-              <p className="text-gray-600 text-lg">
-                ❌ No results found for "{keywords}"
-              </p>
+              <p className="text-gray-600 text-lg">❌ No results found for "{keywords}"</p>
               <p className="text-gray-500 mt-2">Try different keywords</p>
             </div>
           )}
